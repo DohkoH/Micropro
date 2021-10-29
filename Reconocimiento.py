@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+
+
 #cap = cv2.VideoCapture(0)
 
 def Reconocer(imagen):
@@ -26,6 +28,8 @@ def Reconocer(imagen):
             nuevoContorno = cv2.convexHull(c)
             cv2.drawContours(frame, [nuevoContorno], 0, (255,0,0), 3)
     #cv2.imshow('maskAzul',mask)
-    cv2.imshow('frame',frame)
+    #cv2.imshow('frame',frame)
+    frame=cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
+    return frame
 
 #cv2.destroyAllWindows()
