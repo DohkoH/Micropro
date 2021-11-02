@@ -22,11 +22,12 @@ azulAlto = np.array([125,255,255],np.uint8)
 def iniciar():
     global cap
     global control
+    global Estado
     cap1.release()
     cap = cv2.VideoCapture(0,cv2.CAP_DSHOW)
     control=1
     Arduino.write(b'1')
-    print("Faja Activada.")
+    Estado.set("Faja Activada.")
     BotonFin.config(state=ACTIVE)
     BotonInicio.config(state=DISABLED)
     visualizar()
@@ -34,11 +35,12 @@ def iniciar():
 def detener():
     global cap1
     global control
+    global Estado
     cap.release()
     control=0
     cap1 = cv2.VideoCapture(0,cv2.CAP_DSHOW)
     Arduino.write(b'0')
-    print("Faja Desactivada.")
+    Estado.set("Faja Desactivada.")
     BotonInicio.config(state=ACTIVE)
     BotonFin.config(state=DISABLED)
     visualizar2()
@@ -84,7 +86,7 @@ def visualizar():
             img = ImageTk.PhotoImage(image=im)
             lbl_img.configure(image=img)
             lbl_img.image = img
-            lbl_img.after(5, visualizar)
+            lbl_img.after(10, visualizar)
         else:
             lbl_img.image = ""
             cap.release()
@@ -99,19 +101,20 @@ def visualizar2():
         img1 = ImageTk.PhotoImage(image=im1)
         lbl_img.configure(image=img1)
         lbl_img.image = img1
-        lbl_img.after(5,visualizar2)
+        lbl_img.after(10,visualizar2)
     else:
         lbl_img.image = ""
         cap1.release()
 
 def CambioControl(Cambio,Control):
-        if Cambio:
-            if Control==0:
-                Arduino.write(b'0')
-                print("Faja Desactivada.")
-            else:
-                Arduino.write(b'1')
-                print("Faja Activada.")
+    global Estado
+    if Cambio:
+        if Control==0:
+            Arduino.write(b'0')
+            Estado.set("Faja Desactivada.")
+        else:
+            Arduino.write(b'1')
+            Estado.set("Faja Activada.")
 
 cap=cv2.VideoCapture(0,cv2.CAP_ANDROID)
 cap1=cv2.VideoCapture(0,cv2.CAP_ANDROID)
@@ -127,5 +130,10 @@ titulo.place(x=90,y=0)
 
 lbl_img=tk.Label(Ventana1,image="",bg="Black")
 lbl_img.place(x=30,y=120)
+
+Estado=tk.StringVar()
+Estado.set("Bienvenido.")
+lbl_estado=tk.Label(Ventana1,textvariable=Estado,bg="White",fg="Black",width=71,anchor=tk.W)
+lbl_estado.place(x=0,y=480)
 
 Ventana1.mainloop()
