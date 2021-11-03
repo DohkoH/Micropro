@@ -10,7 +10,7 @@ import serial as sr
 Arduino=sr.Serial('COM3',9600)
 
 Ventana1=tk.Tk()
-Ventana1.geometry("500x500")
+Ventana1.geometry("700x700")
 Ventana1.resizable(0,0)
 Ventana1.title("Proyecto")
 Ventana1.configure(bg="Black")
@@ -49,16 +49,15 @@ def visualizar():
     global cap
     global control
     global pre_control
-    
+    pre_control=control
     if cap is not None:
         ret,frame = cap.read()
         if ret == True:
-            frame = imutils.resize(frame,width=450)
+            #frame = imutils.resize(frame)
             frameHSV = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
             mask = cv2.inRange(frameHSV,azulBajo,azulAlto)
             contornos,_ = cv2.findContours(mask, cv2.RETR_EXTERNAL,
         cv2.CHAIN_APPROX_SIMPLE)
-            pre_control=control
             for c in contornos:               
                 area = cv2.contourArea(c)
                 if area > 3000:
@@ -72,21 +71,16 @@ def visualizar():
                     nuevoContorno = cv2.convexHull(c)
                     cv2.drawContours(frame, [nuevoContorno], 0, (255,0,0), 3)
                     control=0
+                    
                 else:
                     control=1
-
-            if control==pre_control:
-                cambio=False
-            else:
-                cambio=True
-
-            CambioControl(cambio,control)
+            CambioControl(pre_control,control)
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             im = Image.fromarray(frame)
             img = ImageTk.PhotoImage(image=im)
             lbl_img.configure(image=img)
             lbl_img.image = img
-            lbl_img.after(10, visualizar)
+            lbl_img.after(5, visualizar)
         else:
             lbl_img.image = ""
             cap.release()
@@ -95,45 +89,50 @@ def visualizar2():
     global cap1
     if cap1 is not None:
         ret,frame1 = cap1.read()
-        frame1 = imutils.resize(frame1,width=450)
-        frame1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2RGB)
-        im1 = Image.fromarray(frame1)
-        img1 = ImageTk.PhotoImage(image=im1)
-        lbl_img.configure(image=img1)
-        lbl_img.image = img1
-        lbl_img.after(10,visualizar2)
-    else:
-        lbl_img.image = ""
-        cap1.release()
+        if ret == True:
+            #frame1 = imutils.resize(frame1)
+            frame1 = cv2.cvtColor(frame1,cv2.COLOR_BGR2RGB)
+            im1 = Image.fromarray(frame1)
+            img1 = ImageTk.PhotoImage(image=im1)
+            lbl_img.configure(image=img1)
+            lbl_img.image = img1
+            lbl_img.after(10,visualizar2)
+        else:
+            lbl_img.image = ""
+            cap1.release()
 
-def CambioControl(Cambio,Control):
+def CambioControl(Pre_control,Control):
     global Estado
-    if Cambio:
+    if Pre_control!=Control:
         if Control==0:
             Arduino.write(b'0')
             Estado.set("Faja Desactivada.")
-        else:
+        elif Control==1:
             Arduino.write(b'1')
             Estado.set("Faja Activada.")
+        else:
+            Arduino.write(b'0')
+            Estado.set("Faja Detenida. Estado Desconocido.")
+
 
 cap=cv2.VideoCapture(0,cv2.CAP_ANDROID)
 cap1=cv2.VideoCapture(0,cv2.CAP_ANDROID)
 
 BotonInicio=tk.Button(Ventana1,text="Iniciar",command=lambda:iniciar(),state=ACTIVE)
-BotonInicio.place(x=135,y=70)
+BotonInicio.place(x=250,y=90)
 
 BotonFin=tk.Button(Ventana1,text="Detener",command=lambda:detener(),state=DISABLED)
-BotonFin.place(x=290,y=70)
+BotonFin.place(x=400,y=90)
 
 titulo=tk.Label(Ventana1,text="Control de Fajas \n por Vision Artificial",bg="Black",fg="White",font=("Courier",18))
-titulo.place(x=90,y=0)
+titulo.place(x=190,y=10)
 
 lbl_img=tk.Label(Ventana1,image="",bg="Black")
 lbl_img.place(x=30,y=120)
 
 Estado=tk.StringVar()
 Estado.set("Bienvenido.")
-lbl_estado=tk.Label(Ventana1,textvariable=Estado,bg="White",fg="Black",width=71,anchor=tk.W)
-lbl_estado.place(x=0,y=480)
+lbl_estado=tk.Label(Ventana1,textvariable=Estado,bg="White",fg="Black",width=100,anchor=tk.W)
+lbl_estado.place(x=0,y=680)
 
 Ventana1.mainloop()
