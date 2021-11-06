@@ -14,10 +14,14 @@ Ventana1.geometry("700x700")
 Ventana1.resizable(0,0)
 Ventana1.title("Proyecto")
 Ventana1.configure(bg="Black")
+Ventana1.iconbitmap("unfv.ico")
  
 
 azulBajo = np.array([100,100,20],np.uint8)
 azulAlto = np.array([125,255,255],np.uint8)
+
+rojoBajo=np.array([100,100,20],np.uint8)
+rojoAlto=np.array([100,100,20],np.uint8)
 
 def iniciar():
     global cap
