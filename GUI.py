@@ -20,13 +20,23 @@ Ventana1.iconbitmap("unfv.ico")
 azulBajo = np.array([100,100,20],np.uint8)
 azulAlto = np.array([125,255,255],np.uint8)
 
-rojoBajo=np.array([100,100,20],np.uint8)
-rojoAlto=np.array([100,100,20],np.uint8)
+amarilloBajo = np.array([15,100,20],np.uint8)
+amarilloAlto = np.array([45,255,255],np.uint8)
+
+redBajo1 = np.array([0,100,20],np.uint8)
+redAlto1 = np.array([5,255,255],np.uint8)
+
+redBajo2 = np.array([175,100,20],np.uint8)
+redAlto2 = np.array([179,255,255],np.uint8)
 
 def iniciar():
     global cap
     global control
     global Estado
+    global ColorAlto,ColorBajo,ColorE
+    global Color
+    global BordeColor
+
     cap1.release()
     cap = cv2.VideoCapture(0,cv2.CAP_DSHOW)
     control=1
@@ -45,6 +55,7 @@ def detener():
     cap1 = cv2.VideoCapture(0,cv2.CAP_DSHOW)
     Arduino.write(b'0')
     Estado.set("Faja Desactivada.")
+    Color.set("Seleccionar Color")
     BotonInicio.config(state=ACTIVE)
     BotonFin.config(state=DISABLED)
     visualizar2()
@@ -53,31 +64,35 @@ def visualizar():
     global cap
     global control
     global pre_control
+    global ColorAlto,ColorBajo
+
     pre_control=control
     if cap is not None:
         ret,frame = cap.read()
         if ret == True:
             #frame = imutils.resize(frame)
-            frameHSV = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
-            mask = cv2.inRange(frameHSV,azulBajo,azulAlto)
-            contornos,_ = cv2.findContours(mask, cv2.RETR_EXTERNAL,
-        cv2.CHAIN_APPROX_SIMPLE)
-            for c in contornos:               
-                area = cv2.contourArea(c)
-                if area > 3000:
-                    M = cv2.moments(c)
-                    if (M["m00"]==0): M["m00"]=1
-                    x = int(M["m10"]/M["m00"])
-                    y = int(M['m01']/M['m00'])
-                    cv2.circle(frame, (x,y), 7, (0,255,0), -1)
-                    font = cv2.FONT_HERSHEY_SIMPLEX
-                    cv2.putText(frame, "AzulDetectado",(x+10,y), font, 0.75,(0,255,0),1,cv2.LINE_AA)
-                    nuevoContorno = cv2.convexHull(c)
-                    cv2.drawContours(frame, [nuevoContorno], 0, (255,0,0), 3)
-                    control=0
-                    
-                else:
-                    control=1
+            ColorAlto,ColorBajo,ColorE,BordeColor=CambioColor()
+            if ColorE != "Seleccionar Color":
+                frameHSV = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
+                mask = cv2.inRange(frameHSV,ColorBajo,ColorAlto)
+                contornos,_ = cv2.findContours(mask, cv2.RETR_EXTERNAL,
+            cv2.CHAIN_APPROX_SIMPLE)
+                for c in contornos:               
+                    area = cv2.contourArea(c)
+                    if area > 3000:
+                        M = cv2.moments(c)
+                        if (M["m00"]==0): M["m00"]=1
+                        x = int(M["m10"]/M["m00"])
+                        y = int(M['m01']/M['m00'])
+                        cv2.circle(frame, (x,y), 7, BordeColor, -1)
+                        font = cv2.FONT_HERSHEY_SIMPLEX
+                        cv2.putText(frame, "{}".format(ColorE)+" Detectado",(x+10,y), font, 0.75,(0,255,0),1,cv2.LINE_AA)
+                        nuevoContorno = cv2.convexHull(c)
+                        cv2.drawContours(frame, [nuevoContorno], 0, BordeColor, 3)
+                        control=0
+                        
+                    else:
+                        control=1
             CambioControl(pre_control,control)
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             im = Image.fromarray(frame)
@@ -118,18 +133,50 @@ def CambioControl(Pre_control,Control):
             Arduino.write(b'0')
             Estado.set("Faja Detenida. Estado Desconocido.")
 
+def CambioColor():
+
+    global Color
+
+    ColorE=Color.get()
+
+    if ColorE == "Azul":
+        ColorAlto=azulAlto
+        ColorBajo=azulBajo
+        BordeColor=(255,0,0)
+    elif ColorE=="Rojo":
+        ColorAlto=redAlto2
+        ColorBajo=redBajo2
+        BordeColor=(0,0,255)
+    elif ColorE== "Amarillo":
+        ColorAlto=amarilloAlto
+        ColorBajo=amarilloBajo
+        BordeColor=(0,255,255)
+    else:
+        ColorAlto=azulAlto
+        ColorBajo=azulBajo
+        BordeColor=(255,0,0)
+
+    return ColorAlto,ColorBajo,ColorE,BordeColor
+
+
+lista_colores=["Azul","Rojo","Amarillo"]
 
 cap=cv2.VideoCapture(0,cv2.CAP_ANDROID)
 cap1=cv2.VideoCapture(0,cv2.CAP_ANDROID)
 
 BotonInicio=tk.Button(Ventana1,text="Iniciar",command=lambda:iniciar(),state=ACTIVE)
-BotonInicio.place(x=250,y=90)
+BotonInicio.place(x=150,y=90)
 
 BotonFin=tk.Button(Ventana1,text="Detener",command=lambda:detener(),state=DISABLED)
-BotonFin.place(x=400,y=90)
+BotonFin.place(x=300,y=90)
 
 titulo=tk.Label(Ventana1,text="Control de Fajas \n por Vision Artificial",bg="Black",fg="White",font=("Courier",18))
 titulo.place(x=190,y=10)
+
+Color=tk.StringVar()
+Color.set("Seleccionar Color")
+barra_color=tk.OptionMenu(Ventana1,Color,*lista_colores)
+barra_color.place(x=450,y=90)
 
 lbl_img=tk.Label(Ventana1,image="",bg="Black")
 lbl_img.place(x=30,y=120)
