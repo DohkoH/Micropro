@@ -3,11 +3,12 @@ from tkinter.constants import ACTIVE, DISABLED
 from PIL import Image
 from PIL import ImageTk
 import cv2
-import imutils
 import numpy as np
 import serial as sr
+import time
 
 Arduino=sr.Serial('COM3',9600)
+time.sleep(2)
 
 Ventana1=tk.Tk()
 Ventana1.geometry("700x700")
@@ -63,10 +64,8 @@ def detener():
 def visualizar():
     global cap
     global control
-    global pre_control
     global ColorAlto,ColorBajo
 
-    pre_control=control
     if cap is not None:
         ret,frame = cap.read()
         if ret == True:
@@ -79,7 +78,7 @@ def visualizar():
             cv2.CHAIN_APPROX_SIMPLE)
                 for c in contornos:               
                     area = cv2.contourArea(c)
-                    if area > 3000:
+                    if area > 3500:
                         M = cv2.moments(c)
                         if (M["m00"]==0): M["m00"]=1
                         x = int(M["m10"]/M["m00"])
@@ -90,10 +89,14 @@ def visualizar():
                         nuevoContorno = cv2.convexHull(c)
                         cv2.drawContours(frame, [nuevoContorno], 0, BordeColor, 3)
                         control=0
-                        
-                    else:
+                if control==1:
+                        Arduino.write(b'1')
+                        Estado.set("Faja Activada")
+                elif control==0:
+                        Estado.set("Faja Desactivada")
+                        Arduino.write(b'0')
                         control=1
-            CambioControl(pre_control,control)
+            #CambioControl(pre_control,control)
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             im = Image.fromarray(frame)
             img = ImageTk.PhotoImage(image=im)
@@ -119,19 +122,6 @@ def visualizar2():
         else:
             lbl_img.image = ""
             cap1.release()
-
-def CambioControl(Pre_control,Control):
-    global Estado
-    if Pre_control!=Control:
-        if Control==0:
-            Arduino.write(b'0')
-            Estado.set("Faja Desactivada.")
-        elif Control==1:
-            Arduino.write(b'1')
-            Estado.set("Faja Activada.")
-        else:
-            Arduino.write(b'0')
-            Estado.set("Faja Detenida. Estado Desconocido.")
 
 def CambioColor():
 
